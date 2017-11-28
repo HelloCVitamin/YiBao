@@ -1,0 +1,4 @@
+Applications/Config/
+vendor/
+.idea/
+composer.lock
