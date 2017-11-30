@@ -19,10 +19,15 @@
  */
 
 //declare(ticks=1);
-include dirname(__DIR__). "/Config/config.php";
-include dirname(__DIR__). "SendRequest.php";
+include dirname(__DIR__) . "/Config/config.php";
+include dirname(__DIR__) . "/YiBao/SendRequest.php";
+include dirname(__DIR__) . "/Message/TulingMessage.php";
+
 use \GatewayWorker\Lib\Gateway;
+use TulingMessage\TulingMessage;
+
 /**
+ *
  * 主逻辑
  * 主要是处理 onConnect onMessage onClose 三个方法
  * onConnect 和 onClose 如果不需要可以不用实现并删除
@@ -35,6 +40,7 @@ class Events
      */
     public static $db = null;
     public static $sendRequest = null;
+    public static $tulingMessage = null;
 
     /**
      * 进程启动后初始化数据库连接
@@ -43,6 +49,7 @@ class Events
     {
         self::$db = new Workerman\MySQL\Connection(DB_HOST, DB_PORT, DB_USER, DB_PWD, DB_NAME);
         self::$sendRequest = new SendRequest();
+        self::$tulingMessage = new TulingMessage(TULING_API_KEY);
     }
 
 
@@ -78,17 +85,13 @@ class Events
                         break;
                     case "kefu":
                         $msg = "";
-                        $param = array(
-                            'key' => TULING_API_KEY,
-                            'info' => $message['data']['mine']['content'],
-                            "userid" => $message['data']['mine']['id']
-                        );
-                        $msg = self::$sendRequest->curl("", $param);
-                        $msg = json_decode($msg,true);
-                        if($msg['code'] == 100000){
+                        $msg = self::$tulingMessage->onMessage($message['data']['mine']['id'], $message['data']['mine']['content']);
+                        $msg = json_decode($msg, true);
+                        if ($msg['code'] == 100000) {
                             $msg = $msg['text'];
-                        }else{
-
+                        } else {
+                            //TODO
+                            time();
                         }
                         $response['emit'] = 'chatMessage';
                         $response['data']['username'] = $message['data']['to']['name'];

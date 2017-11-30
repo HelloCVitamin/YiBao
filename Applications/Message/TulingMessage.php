@@ -1,24 +1,50 @@
 <?php
+/**
+ * Created by PhpStorm.
+ * User: root
+ * Date: 17-11-30
+ * Time: 上午11:06
+ */
 
+namespace TulingMessage;
 
-class SendRequest
+class TulingMessage
 {
-    private $appKey;
-    private $token;
+    const   TULINGAPIURL = 'http://www.tuling123.com/openapi/api';
 
-    const   TULINGAPIURL = 'http://www.tuling123.com/openapi/api';    //IM服务地址
-    const   COOLQURL = 'http://127.0.0.1:5700';          //短信服务地址
+    private $key;
+    private $secret;
+
+    public function __construct($key, $secret = '')
+    {
+        $this->key = $key;
+        $this->secret = $secret;
+    }
+
 
     /**
-     * 参数初始化
-     * @param $appKey
-     * @param $appSecret
-     * @param string $format
+     * @param $userId
+     * @param $info
+     * @param string $loc
+     * @return mixed
      */
-    public function __construct($appKey = "", $token = "")
+    public function onMessage($userId, $info, $loc = '')
     {
-        $this->appKey = $appKey;
-        $this->token = $token;
+        $param = array(
+            'key' => $this->key,
+            'info' => $info,
+            "userid" => $userId
+        );
+        $loc != '' ? $param['loc'] = $loc : $param;
+        $msg = self::curl($param);
+        return $msg;
+    }
+
+
+    //返回true，即是，否则不是
+    public static function isJson($str)
+    {
+        return !is_null(json_decode($str));
     }
 
     /**
@@ -33,6 +59,7 @@ class SendRequest
             'RC-Timestamp:' . $timeStamp
         );
     }
+
 
     /**
      * 重写实现 http_build_query 提交实现(同名key)key=val1&key=val2
@@ -80,18 +107,9 @@ class SendRequest
      * @param $httpHeader
      * @return mixed
      */
-    public function curl($action, $params, $contentType = 'json', $module = 'tuling', $httpMethod = 'POST')
+    private function curl($params, $contentType = 'json', $httpMethod = 'POST')
     {
-        switch ($module) {
-            case 'tuling':
-                $action = self::TULINGAPIURL . $action;
-                break;
-            case 'coolq':
-                $action = self::COOLQURL . $action;
-                break;
-            default:
-                $action = self::TULINGAPIURL . $action;
-        }
+        $action = self::TULINGAPIURL;
         $httpHeader = $this->createHttpHeader();
         $ch = curl_init();
         if ($httpMethod == 'POST' && $contentType == 'urlencoded') {
@@ -121,4 +139,5 @@ class SendRequest
         curl_close($ch);
         return $ret;
     }
+
 }
